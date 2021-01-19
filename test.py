@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 from math import *
+import csv
 
+books = []
 # Fonction qui récupère toutes les infos liées à un livre (prix, titre, etc.)
 
 
@@ -53,7 +55,7 @@ def getBookData(bookUrl):
     bookData["image_url"] = "http://books.toscrape.com/" + \
         soup.find_all('img')[0].attrs['src'][6:]
 
-    # print(bookData)
+    books.append(bookData)
 
 
 def getBooksOfCategory(categoryUrl):
@@ -66,23 +68,46 @@ def getBooksOfCategory(categoryUrl):
     numberOfPage = ceil(int(numberOfBooks) / 20)
 
     for i in range(1, numberOfPage + 1):
-        print(i)
         if i != 1:
             nextPageUrl = categoryUrl[:-10] + '/page-' + str(i) + '.html'
             bookPage = requests.get(nextPageUrl)
             soup = BeautifulSoup(bookPage.text, 'html.parser')
 
-        booksOnPage = soup.find_all('img')
+        booksOnPage = soup.find_all('article')
 
         for book in booksOnPage:
 
-            bookURL = book.attrs['src']
-            newBook = "http://books.toscrape.com/" + bookURL[12:]
+            bookURL = book.h3.a.attrs['href']
+            newBook = "http://books.toscrape.com/catalogue/" + bookURL[9:]
             categoryBooks.append(newBook)
 
-    print(categoryBooks)
+    for bookURL in categoryBooks:
+        getBookData(bookURL)
 
 
-getBookData("http://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html")
-getBooksOfCategory(
-    "http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html")
+def getAllData():
+    soup = BeautifulSoup(requests.get(
+        'http://books.toscrape.com/index.html').text, 'html.parser')
+
+    categoriesList = []
+
+    navList = soup.find("ul", {"class": "nav nav-list"}).li.ul.find_all("li")
+
+    for category in navList:
+        categoriesList.append(
+            'http://books.toscrape.com/' + category.a.attrs['href'])
+
+    for categoryURL in categoriesList:
+        getBooksOfCategory(categoryURL)
+
+    # Export all books in CSV
+    keys = books[0].keys()
+    with open('books.csv', 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(books)
+
+
+# getBookData("http://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html")
+# getBooksOfCategory("http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html")
+getAllData()
