@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from math import *
 
 # Fonction qui récupère toutes les infos liées à un livre (prix, titre, etc.)
 
@@ -52,7 +53,36 @@ def getBookData(bookUrl):
     bookData["image_url"] = "http://books.toscrape.com/" + \
         soup.find_all('img')[0].attrs['src'][6:]
 
-    print(bookData)
+    # print(bookData)
+
+
+def getBooksOfCategory(categoryUrl):
+
+    categoryBooks = []
+    bookPage = requests.get(categoryUrl)
+    soup = BeautifulSoup(bookPage.text, 'html.parser')
+
+    numberOfBooks = soup.find_all('form')[0].find_all('strong')[0].string
+    numberOfPage = ceil(int(numberOfBooks) / 20)
+
+    for i in range(1, numberOfPage + 1):
+        print(i)
+        if i != 1:
+            nextPageUrl = categoryUrl[:-10] + '/page-' + str(i) + '.html'
+            bookPage = requests.get(nextPageUrl)
+            soup = BeautifulSoup(bookPage.text, 'html.parser')
+
+        booksOnPage = soup.find_all('img')
+
+        for book in booksOnPage:
+
+            bookURL = book.attrs['src']
+            newBook = "http://books.toscrape.com/" + bookURL[12:]
+            categoryBooks.append(newBook)
+
+    print(categoryBooks)
 
 
 getBookData("http://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html")
+getBooksOfCategory(
+    "http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html")
