@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from math import *
 import csv
+import random
 
 books = []
 # Fonction qui récupère toutes les infos liées à un livre (prix, titre, etc.)
@@ -56,7 +57,6 @@ def getBookData(bookUrl):
         soup.find_all('img')[0].attrs['src'][6:]
 
     books.append(bookData)
-    print(bookData)
 
 
 def getBooksOfCategory(categoryUrl):
@@ -85,6 +85,15 @@ def getBooksOfCategory(categoryUrl):
     for bookURL in categoryBooks:
         getBookData(bookURL)
 
+    # Export all books of the category in CSV
+    keys = books[0].keys()
+    with open('books-%s.csv' % (random.randint(0, 999)), 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(books)
+
+    books.clear()
+
 
 def getAllData():
     soup = BeautifulSoup(requests.get(
@@ -100,13 +109,6 @@ def getAllData():
 
     for categoryURL in categoriesList:
         getBooksOfCategory(categoryURL)
-
-    # Export all books in CSV
-    keys = books[0].keys()
-    with open('books.csv', 'w', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(books)
 
 
 # getBookData("http://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html")
