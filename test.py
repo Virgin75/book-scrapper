@@ -22,7 +22,7 @@ def getBookData(bookUrl):
     }
 
     bookPage = requests.get(bookUrl)
-    soup = BeautifulSoup(bookPage.text, 'html.parser')
+    soup = BeautifulSoup(bookPage.content, 'html.parser')
 
     bookData["product_page_url"] = bookUrl
 
@@ -56,6 +56,7 @@ def getBookData(bookUrl):
         soup.find_all('img')[0].attrs['src'][6:]
 
     books.append(bookData)
+    print(bookData)
 
 
 def getBooksOfCategory(categoryUrl):
