@@ -45,6 +45,13 @@ def getBookData(bookUrl):
     bookData["category"] = soup.find_all(
         "div", {"class": "page_inner"})[1].ul.find_all('li')[2].a.string
 
+    bookData["review_rating"] = soup.find(
+        'div', id='content_inner').article.find_all('div')[0].find(
+            "div", {"class": "col-sm-6 product_main"}).find_all('p')[2].attrs['class'][1] + " out of five stars."
+
+    bookData["image_url"] = "http://books.toscrape.com/" + \
+        soup.find_all('img')[0].attrs['src'][6:]
+
     print(bookData)
 
 
