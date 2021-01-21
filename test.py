@@ -5,11 +5,15 @@ import csv
 import random
 
 books = []
-# Fonction qui récupère toutes les infos liées à un livre (prix, titre, etc.)
+
+'''
+Fonction qui récupère toutes les infos liées à un 
+livre (prix, titre, etc.) à partir d'une URL de page produit
+'''
 
 
-def getBookData(bookUrl):
-    bookData = {
+def get_book_data(book_url):
+    book_data = {
         "product_page_url": "",
         "universal_product_code": "",
         "title": "",
@@ -22,68 +26,75 @@ def getBookData(bookUrl):
         "image_url": ""
     }
 
-    bookPage = requests.get(bookUrl)
-    soup = BeautifulSoup(bookPage.content, 'html.parser')
+    book_page = requests.get(book_url)
+    soup = BeautifulSoup(book_page.content, 'html.parser')
 
-    bookData["product_page_url"] = bookUrl
+    book_data["product_page_url"] = book_url
 
-    bookData["universal_product_code"] = soup.find(
+    book_data["universal_product_code"] = soup.find(
         'div', id='content_inner').article.table.find_all('tr')[0].td.string
 
-    bookData["title"] = soup.find(
+    book_data["title"] = soup.find(
         'div', id='content_inner').article.find_all('div')[0].find(
             "div", {"class": "col-sm-6 product_main"}).h1.string
 
-    bookData["price_including_tax"] = soup.find(
+    book_data["price_including_tax"] = soup.find(
         'div', id='content_inner').article.table.find_all('tr')[3].td.string
 
-    bookData["price_excluding_tax"] = soup.find(
+    book_data["price_excluding_tax"] = soup.find(
         'div', id='content_inner').article.table.find_all('tr')[2].td.string
 
-    bookData["number_available"] = soup.find(
+    book_data["number_available"] = soup.find(
         'div', id='content_inner').article.table.find_all('tr')[5].td.string
 
-    bookData["product_description"] = soup.find(
+    book_data["product_description"] = soup.find(
         'div', id='content_inner').article.find_all('p')[3].string
 
-    bookData["category"] = soup.find_all(
+    book_data["category"] = soup.find_all(
         "div", {"class": "page_inner"})[1].ul.find_all('li')[2].a.string
 
-    bookData["review_rating"] = soup.find(
+    book_data["review_rating"] = soup.find(
         'div', id='content_inner').article.find_all('div')[0].find(
             "div", {"class": "col-sm-6 product_main"}).find_all('p')[2].attrs['class'][1] + " out of five stars."
 
-    bookData["image_url"] = "http://books.toscrape.com/" + \
+    book_data["image_url"] = "http://books.toscrape.com/" + \
         soup.find_all('img')[0].attrs['src'][6:]
 
-    books.append(bookData)
+    books.append(book_data)
 
 
-def getBooksOfCategory(categoryUrl):
+'''
+Fonction qui récupère une liste de livres à partir de l'URL d'une page de catégorie, 
+puis génère le .CSV pour chaque catégorie en récupérant les données de chaque livre 
+via get_book_data()
+'''
 
-    categoryBooks = []
-    bookPage = requests.get(categoryUrl)
-    soup = BeautifulSoup(bookPage.text, 'html.parser')
 
-    numberOfBooks = soup.find_all('form')[0].find_all('strong')[0].string
-    numberOfPage = ceil(int(numberOfBooks) / 20)
+def get_books_from_category(category_url):
 
-    for i in range(1, numberOfPage + 1):
+    category_books = []
+    category_page = requests.get(category_url)
+    soup = BeautifulSoup(category_page.text, 'html.parser')
+
+    number_of_books = soup.find_all('form')[0].find_all('strong')[0].string
+    number_of_pages = ceil(int(number_of_books) / 20)
+
+    for i in range(1, number_of_pages + 1):
         if i != 1:
-            nextPageUrl = categoryUrl[:-10] + '/page-' + str(i) + '.html'
-            bookPage = requests.get(nextPageUrl)
-            soup = BeautifulSoup(bookPage.text, 'html.parser')
+            next_page_url = category_url[:-10] + '/page-' + str(i) + '.html'
+            next_page = requests.get(next_page_url)
+            soup = BeautifulSoup(next_page.text, 'html.parser')
 
-        booksOnPage = soup.find_all('article')
+        books_on_category_page = soup.find_all('article')
 
-        for book in booksOnPage:
+        for book in books_on_category_page:
 
-            bookURL = book.h3.a.attrs['href']
-            newBook = "http://books.toscrape.com/catalogue/" + bookURL[9:]
-            categoryBooks.append(newBook)
+            url = book.h3.a.attrs['href']
+            new_book = "http://books.toscrape.com/catalogue/" + url[9:]
+            category_books.append(new_book)
 
-    for bookURL in categoryBooks:
-        getBookData(bookURL)
+    for book_Url in category_books:
+        get_book_data(book_Url)
 
     # Export all books of the category in CSV
     keys = books[0].keys()
@@ -95,22 +106,26 @@ def getBooksOfCategory(categoryUrl):
     books.clear()
 
 
-def getAllData():
+'''
+Fonction qui récupère la liste des catégories de livres, puis lance
+le process en appelant la fonction get_books_from_category()
+'''
+
+
+def get_all_data():
     soup = BeautifulSoup(requests.get(
         'http://books.toscrape.com/index.html').text, 'html.parser')
 
-    categoriesList = []
+    categories_list = []
 
     navList = soup.find("ul", {"class": "nav nav-list"}).li.ul.find_all("li")
 
     for category in navList:
-        categoriesList.append(
+        categories_list.append(
             'http://books.toscrape.com/' + category.a.attrs['href'])
 
-    for categoryURL in categoriesList:
-        getBooksOfCategory(categoryURL)
+    for category_URL in categories_list:
+        get_books_from_category(category_URL)
 
 
-# getBookData("http://books.toscrape.com/catalogue/forever-and-forever-the-courtship-of-henry-longfellow-and-fanny-appleton_894/index.html")
-# getBooksOfCategory("http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html")
-getAllData()
+get_all_data()
