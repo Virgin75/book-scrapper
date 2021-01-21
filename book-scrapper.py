@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from math import *
 import csv
-import random
+import re
 
 books = []
 
@@ -71,7 +71,8 @@ Fonction qui télécharge l'image d'un livre sur le disque dur
 
 def download_book_picture(url, title):
     picture = requests.get(url)
-    with open(f'{title}.jpg', 'wb') as file:
+    formatted_title = re.sub(r'\W+', '', title)
+    with open(f'{formatted_title}.jpg', 'wb') as file:
         file.write(picture.content)
 
 
@@ -118,6 +119,8 @@ def get_books_from_category(category_url):
         dict_writer.writerows(books)
 
     books.clear()
+    print(f'{category_name} books have been scrapped in
+          "books-{category_name}.csv file"')
 
 
 '''
@@ -127,6 +130,7 @@ le process en appelant la fonction get_books_from_category()
 
 
 def get_all_data():
+    print(f'Start scrapping, please wait...')
     soup = BeautifulSoup(requests.get(
         'http://books.toscrape.com/index.html').text, 'html.parser')
 
