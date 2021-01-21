@@ -1,4 +1,4 @@
-# What is book-scrapper?
+# 👉 What is book-scrapper?
 
 book-scrapper is a Python CLI script to scrap data of the books on [Books To Scrape website](http://books.toscrape.com/)
 
@@ -17,7 +17,7 @@ Each line of the .csv file will have the folowing columns :
 - review_rating
 - image_url
 
-# Usage:
+# 👉 Usage:
 
 1. Download this repo locally & 'cd' to the directory
 2. Create a virtual env & activate it
