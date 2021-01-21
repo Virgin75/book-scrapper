@@ -61,6 +61,18 @@ def get_book_data(book_url):
         soup.find_all('img')[0].attrs['src'][6:]
 
     books.append(book_data)
+    download_book_picture(url=book_data['image_url'], title=book_data['title'])
+
+
+'''
+Fonction qui télécharge l'image d'un livre sur le disque dur
+'''
+
+
+def download_book_picture(url, title):
+    picture = requests.get(url)
+    with open(f'{title}.jpg', 'wb') as file:
+        file.write(picture.content)
 
 
 '''
@@ -78,6 +90,8 @@ def get_books_from_category(category_url):
 
     number_of_books = soup.find_all('form')[0].find_all('strong')[0].string
     number_of_pages = ceil(int(number_of_books) / 20)
+
+    category_name = soup.find('h1').string
 
     for i in range(1, number_of_pages + 1):
         if i != 1:
@@ -98,7 +112,7 @@ def get_books_from_category(category_url):
 
     # Export all books of the category in CSV
     keys = books[0].keys()
-    with open('books-%s.csv' % (random.randint(0, 999)), 'w', newline='') as output_file:
+    with open('books-%s.csv' % (category_name), 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(books)
