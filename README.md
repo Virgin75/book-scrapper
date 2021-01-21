@@ -19,9 +19,7 @@ Each line of the .csv file will have the folowing columns :
 
 # Usage:
 
-## Usage
-
-1. Download this repo locally
+1. Download this repo locally & 'cd' to the directory
 2. Create a virtual env & activate it
 
 ```bash
