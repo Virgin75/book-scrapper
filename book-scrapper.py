@@ -1,6 +1,13 @@
 from models import *
+import os
 
 print('Start scrapping, please wait...')
+
+# Create empty directory for assets (book pictures and CSV)
+current_directory = os.getcwd()
+final_directory = os.path.join(current_directory, r'assets')
+if not os.path.exists(final_directory):
+    os.makedirs(final_directory)
 
 soup = BeautifulSoup(requests.get(
     'http://books.toscrape.com/index.html').text, 'html.parser')

@@ -35,7 +35,7 @@ class Book:
     def save_to_csv(self, category_title):
 
         keys = self.__dict__.keys()
-        with open('books-%s.csv' % (category_title), 'w', newline='') as file:
+        with open('assets/books-%s.csv' % (category_title), 'w', newline='') as file:
             dict_writer = csv.DictWriter(file, keys)
             dict_writer.writeheader()
             dict_writer.writerow(self.__dict__)
@@ -43,7 +43,7 @@ class Book:
     def download_picture(self):
         picture = requests.get(self.image_url)
         formatted_title = re.sub(r'\W+', '', self.title)
-        with open(f'{formatted_title}.jpg', 'wb') as file:
+        with open(f'assets/{formatted_title}.jpg', 'wb') as file:
             return file.write(picture.content)
 
 
