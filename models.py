@@ -3,14 +3,23 @@ from bs4 import BeautifulSoup
 from math import *
 import re
 import csv
+import asyncio
+import os
+import sys
 
 
 class Book:
-    def __init__(self, url):
-        book_page = requests.get(url)
+
+    @classmethod
+    async def create(cls, url):
+        loop = asyncio.get_event_loop()
+
+        self = Book()
+        self.product_page_url = url
+
+        book_page = await loop.run_in_executor(None, requests.get, url)
         soup = BeautifulSoup(book_page.content, 'html.parser')
 
-        self.product_page_url = url
         self.title = soup.find(
             'div', id='content_inner').article.find_all('div')[0].find(
             "div", {"class": "col-sm-6 product_main"}).h1.string
@@ -32,19 +41,46 @@ class Book:
         self.image_url = "http://books.toscrape.com/" + \
             soup.find_all('img')[0].attrs['src'][6:]
 
-    def save_to_csv(self, category_title):
+        print(f'📥 Data extracted for book : "{self.title}"')
 
-        keys = self.__dict__.keys()
-        with open('assets/books-%s.csv' % (category_title), 'w', newline='') as file:
-            dict_writer = csv.DictWriter(file, keys)
-            dict_writer.writeheader()
-            dict_writer.writerow(self.__dict__)
+        return self
 
-    def download_picture(self):
-        picture = requests.get(self.image_url)
+    async def save_to_csv(self):
+        loop = asyncio.get_event_loop()
+
+        def save_book():
+            current_directory = os.getcwd()
+            csv_file = os.path.join(
+                current_directory, f'assets/{self.category}/books-{self.category}.csv')
+            if not os.path.exists(csv_file):
+                keys = self.__dict__.keys()
+                with open(f'assets/{self.category}/books-{self.category}.csv', 'a', newline='') as file:
+                    dict_writer = csv.DictWriter(file, keys)
+                    dict_writer.writeheader()
+                    dict_writer.writerow(self.__dict__)
+            else:
+                keys = self.__dict__.keys()
+                with open(f'assets/{self.category}/books-{self.category}.csv', 'a', newline='') as file:
+                    dict_writer = csv.DictWriter(file, keys)
+                    dict_writer.writerow(self.__dict__)
+
+        await loop.run_in_executor(None,
+                                   save_book)
+        print(
+            f'\033[32m💾 Book "{self.title}" successfully saved to CSV file.\033[0m')
+
+    async def download_picture(self):
+
+        loop = asyncio.get_event_loop()
+
+        picture = await loop.run_in_executor(None,
+                                             requests.get,
+                                             self.image_url)
         formatted_title = re.sub(r'\W+', '', self.title)
-        with open(f'assets/{formatted_title}.jpg', 'wb') as file:
-            return file.write(picture.content)
+        with open(f'assets/{self.category}/{formatted_title}.jpg', 'wb') as file:
+            file.write(picture.content)
+
+        print(f'🖻 Picture downloaded for book : "{self.title}"')
 
 
 class Category:
@@ -58,17 +94,28 @@ class Category:
             'form')[0].find_all('strong')[0].string
         self.number_of_pages = ceil(int(self.number_of_books) / 20)
 
-    def get_list_of_books(self):
+        # Create the directory in ./assets/<category-name>/
+        current_directory = os.getcwd()
+        cat_directory = os.path.join(current_directory, f'assets/{self.title}')
+        if not os.path.exists(cat_directory):
+            os.makedirs(cat_directory)
+
+    async def get_list_of_books(self):
         list_of_books = []
+        loop = asyncio.get_event_loop()
 
         for i in range(1, self.number_of_pages + 1):
             if i != 1:
                 next_page_url = self.url[:-10] + \
                     '/page-' + str(i) + '.html'
-                next_page = requests.get(next_page_url)
+                next_page = await loop.run_in_executor(None,
+                                                       requests.get,
+                                                       next_page_url)
                 soup = BeautifulSoup(next_page.text, 'html.parser')
             else:
-                first_page = requests.get(self.url)
+                first_page = await loop.run_in_executor(None,
+                                                        requests.get,
+                                                        self.url)
                 soup = BeautifulSoup(first_page.text, 'html.parser')
 
             books_on_page = soup.find_all('article')
@@ -79,3 +126,11 @@ class Category:
                 list_of_books.append(new_book)
 
         return list_of_books
+
+
+class Printer():
+    """Print things to stdout on one line dynamically"""
+
+    def __init__(self, data):
+        sys.stdout.write("\r\x1b[K"+data.__str__())
+        sys.stdout.flush()
