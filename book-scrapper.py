@@ -4,7 +4,7 @@ import time
 
 start_time = time.time()
 
-print('Start scrapping, please wait...')
+print('👉 Please wait, scrapping categories of books...')
 
 # Create empty directory for assets (book pictures and CSV)
 current_directory = os.getcwd()
@@ -12,7 +12,6 @@ final_directory = os.path.join(current_directory, r'assets')
 if not os.path.exists(final_directory):
     os.makedirs(final_directory)
 
-# Empty list of categories
 task_category_list = []
 
 soup = BeautifulSoup(requests.get(
@@ -26,28 +25,20 @@ for category in navList:
 
 
 async def async_task():
-    task_book_list = []
 
-    categories = await asyncio.gather(*task_category_list)
-    flat_list = [item for sublist in categories for item in sublist]
+    for future in asyncio.as_completed(task_category_list):
+        category = await future
 
-    print(flat_list)
+        async def get_book_data(book_url):
+            book = await Book().create(book_url)
+            await book.download_picture()
+            await book.save_to_csv()
 
-    for book_url in flat_list:
-        task_book_list.append(Book().create(book_url))
-
-    books = await asyncio.gather(*task_book_list)
-
-    print(books)
-
-    async def get_data(book):
-        await book.download_picture()
-        book.save_to_csv(book.category)
-
-    await asyncio.gather(*[get_data(book) for book in books])
+        await asyncio.gather(*[get_book_data(book_url) for book_url in category])
 
 
 asyncio.run(async_task())
 
-print("--- %s seconds ---" % (time.time() - start_time))
+
+print(f'--- {time.time() - start_time} seconds ---')
 print('Done.')
