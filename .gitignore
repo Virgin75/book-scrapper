@@ -1,3 +1,11 @@
 .env/
+.env
+env/
+
 .assets/
+.assets
+assets/
+
 .__pycache__/
+.__pycache__
+__pycache__/
