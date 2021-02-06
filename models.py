@@ -126,11 +126,3 @@ class Category:
                 list_of_books.append(new_book)
 
         return list_of_books
-
-
-class Printer():
-    """Print things to stdout on one line dynamically"""
-
-    def __init__(self, data):
-        sys.stdout.write("\r\x1b[K"+data.__str__())
-        sys.stdout.flush()
